@@ -1,7 +1,8 @@
 ---
 title: "Topic"
+author: Max Feng
 format: pdf
 editor: visual
 ---
 
-The topic of my capstone project is "Use Diachronic Word Embedding Models to Quantify Semantic Change of Tech Words Presented in Tech News".
+The topic of my capstone project is "Use Diachronic Word Embedding Models to Quantify Semantic Change of Tech Words Presented in Tech News". In the digital era, words (such as bug, web, mouse, and cloud) come to develop new meanings to accommodate the invention of new devices. I'm very interested in this phenomenon and I would love to see how such words have undergone semantic changes. I will look at all the tech news in the last decade as my data source. The reason I'm choosing tech news is its timeliness. The tech words in the news show exactly the semantic change across time. I will first build a corpus for the tech words and separate it into ten corpora given by each year. Then, I will try to use diachronic word embedding models to visualize the semantic change of the tech words. I am still currently familiarizing myself with this model but the main idea is that the model uses vectors to show how closely related the word is to other synonyms. This involves machine learning which is a brand new area for me too. The final product I'm currently proposing is a dashboard which has all the visualizations of the semantic change of words provided by the diachronic word embedding models. This final product, however, is still subject to change.
