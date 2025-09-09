@@ -1,0 +1,35 @@
+---
+title: "Annotated Bibliography"
+author: Max Feng
+format: pdf
+editor: visual
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+Here is a list of my references.
+
+-   Blank, A. (1999). Why do new meanings occur? A cognitive typology of the motivations for lexical semantic change. In A. Blank & P. Koch (Eds.), *Historical Semantics and Cognition* (pp. 61–90). Mouton de Gruyter.
+
+    This excerpt offers a classic linguistics perspective on why semantic changes occur, categorizing motivations for the semantic changes. I could use this reference to interpret why the tech words that I am interested in have changed their meanings across time (For instance, "cloud" changed via metaphor from meteorology to computing due to a new concept).
+
+-   Hamilton, W. L., Leskovec, J., & Jurafsky, D. (2016). Diachronic Word Embeddings Reveal Statistical Laws of Semantic Change. *Proceedings of the 54th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)*, 1489–1501. <https://doi.org/10.18653/v1/P16-1141>
+
+    This is the central paper that introduced the methodology I am using. It provides the foundational theory and application of word embeddings for tracking semantic change across time.
+
+-   Levy, O., Goldberg, Y., & Dagan, I. (2015). Improving distributional similarity with lessons learned
+    from word embeddings. *Trans*. *ACL*, 3.
+
+    This paper provides a specification for how to pre-process the data so that it fits better into the word embeddingd. It recommends the hyperparameters that will be used in the word embeddings.
+
+-   Van der Maaten, L., & Hinton, G. (2008). Visualizing data using t-SNE. *Journal of Machine Learning Research*, 9(2579-2605):85.
+
+    This paper introduces a t-SNE embedding method to visualize data. As our target words change across time, the background words are shown in their "modern" positions, which makes sense given that these are the current meanings of these words.
+
+-   For the data I am using, I am currently prioritizing Newcatcher API. It has a global coverage of news and helps me cluster the technology news with the key words I input. However, this platform is currently pausing requests for free registration. If I cannot register in a week, I will use The Guardian Open Platform instead. I managed to create a free account already and this platform provides quick access to all the news reports from The Guardian. It may end up having fewer data in technology words compared with Newcatcher API, but it can be a backup option. The links to the two websites are as follows:
+
+    <https://www.newscatcherapi.com/>
+
+    <https://open-platform.theguardian.com/>
