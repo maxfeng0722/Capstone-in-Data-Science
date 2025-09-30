@@ -19,8 +19,7 @@ Here is a list of my references.
 
     This is the central paper that introduced the methodology I am using. It provides the foundational theory and application of word embeddings for tracking semantic change across time.
 
--   Levy, O., Goldberg, Y., & Dagan, I. (2015). Improving distributional similarity with lessons learned
-    from word embeddings. *Trans*. *ACL*, 3.
+-   Levy, O., Goldberg, Y., & Dagan, I. (2015). Improving distributional similarity with lessons learned from word embeddings. *Trans*. *ACL*, 3.
 
     This paper provides a specification for how to pre-process the data so that it fits better into the word embeddingd. It recommends the hyperparameters that will be used in the word embeddings.
 
