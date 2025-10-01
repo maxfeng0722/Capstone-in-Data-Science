@@ -27,6 +27,10 @@ The results section presents the results of the semantic change of each technolo
 
 This section gives a tutorial to the Shiny dashboard I will create as the output of this project. I will give an example of a tech word that is of interest. Then I will explain how to use the dashboard to find its visualization of semantic change as well as its analysis of why this happened. It will be mainly step-by-step screen shots of the dashboard. I will also include the link to the dashboard for the readers to experience themselves.
 
+## Ethical Concerns
+
+In this section, I will talk about some of the ethical concerns of the project. I will explain how I get the API to access the news articles from the Guardian such that I am given permission to fetch the data. Also, I will explain how I make sure that the modeling process is unbiased.
+
 ## References
 
 The final section gives a list of references for this paper. They will be formatted in a proper way using BibTex.
