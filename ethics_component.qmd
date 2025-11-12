@@ -1,0 +1,12 @@
+---
+title: "Ethics Component"
+author: Max Feng
+format: pdf
+editor: visual
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+The present project has several ethical concerns. First, we analyzed content from The Guardian's Open Platform, which consists of publicly available news articles. While the content itself is public, ethical considerations arise around the republication and analysis of journalist's work without explicit individual consent. However, this concern is addressed due to the transformative use of the news articles. Specifically, this project performed computational analysis on the text rather than republishing the content verbatim. The focus is on linguistic patterns, not the journalistic content itself. Therefore, it should be a fair use of data. Second, the news articles from The Guardian's Open Platform are protected by copyright, and large-scale scraping could potentially violate terms of service. To resolve this concern, we complied to The Guardian's Open Platform API terms of service. We registered a developer API key on its website such that it was used for proper authentication. Third, research on technology words could potentially be misused to manipulate tech discourse or reinforce technological determinism. We addressed this issue by positioning the present project as a tool for understanding technological adoption and cultural change, not for predictive or manipulative purposes.
