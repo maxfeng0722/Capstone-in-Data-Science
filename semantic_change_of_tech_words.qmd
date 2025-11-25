@@ -1,0 +1,292 @@
+---
+title: "Use Diachronic Word Embedding Models to Quantify Semantic Change of Tech Words Presented in Tech News"
+format: pdf
+editor: visual
+---
+
+```{r}
+library(httr)
+library(jsonlite)
+library(text2vec)
+library(tidyverse)
+library(lubridate)
+
+fetch_guardian_articles <- function(query, from_date, to_date, api_key,page_size = 50) {
+  base_url <- "https://content.guardianapis.com/search"
+  query_params <- list(
+    `api-key` = api_key,
+    q = query,           
+    `from-date` = from_date,
+    `to-date` = to_date,
+    `page-size` = page_size,
+    `show-fields` = "body, headline, publication, wordCount"
+  )
+
+  # Make the GET request to the API
+  api_response <- GET(
+    url = base_url,
+    query = query_params
+  )
+
+  # Parse the JSON content of the response
+  parsed_response <- content(api_response, as = "parsed", type = "application/json")
+
+  # Check if the API returned an error
+  if (!is.null(parsed_response$response$error)) {
+    stop(paste("API error:", parsed_response$response$error))
+  }
+
+  # Extract the results
+  results <- parsed_response$response$results
+
+  # Transform the messy JSON list into a tidy data frame
+  df <- tibble(article = results) %>%
+    mutate(
+      # Extract values
+      id = map_chr(article, "id", .default = NA),
+      webUrl = map_chr(article, "webUrl", .default = NA),
+      webTitle = map_chr(article, "webTitle", .default = NA),
+      sectionId = map_chr(article, "sectionId", .default = NA),
+      webPublicationDate = map_chr(article, "webPublicationDate", .default = NA),
+      body_text = map_chr(article, c("fields", "body"), .default = NA),
+      headline = map_chr(article, c("fields", "headline"), .default = NA),
+      word_count = map_chr(article, c("fields", "wordCount"), .default = NA) %>% as.integer()
+    ) %>%
+    select(-article) %>% # Remove the original messy list column
+    mutate(webPublicationDate = as_datetime(webPublicationDate))
+
+  return(df)
+}
+```
+
+```{r}
+guardian_api_key <- "2061d68a-c616-4a3d-8c7f-ae2ebde5b4de"
+
+seed_words <- c("cookie", "crypto", "cloud", "archive", "virus", "feed", "airdrop", "chatbot", "edge")
+from_date <- "2025-01-01"
+to_date <- "2025-12-31"
+all_articles_list <- list()
+for (word in seed_words) {
+  message(paste("Fetching articles for:", word))
+  articles_df <- fetch_guardian_articles(
+    query = word,
+    from_date = from_date,
+    to_date = to_date,
+    api_key = guardian_api_key
+  )
+  if (!is.null(articles_df)) {
+    articles_df <- articles_df %>%
+      mutate(seed_word = word) 
+    all_articles_list[[word]] <- articles_df
+  }
+  Sys.sleep(1)
+}
+master_articles_df <- bind_rows(all_articles_list)
+```
+
+```{r}
+cleaned_articles <- master_articles_df %>%
+  filter(!is.na(body_text)) %>%
+
+  mutate(year = year(webPublicationDate)) %>%
+
+  # Clean the HTML out of the body text
+  mutate(body_clean = str_remove_all(body_text, "<.*?>")) %>%
+
+  # Remove any other unwanted characters or whitespace
+  mutate(body_clean = str_squish(body_clean)) %>%
+
+  select(id, year, seed_word, headline, body_clean, webPublicationDate, webUrl)
+
+annual_corpus <- cleaned_articles %>%
+  group_by(seed_word) %>%
+  summarise(full_text = paste(body_clean, collapse = " "))
+
+annual_corpus
+write_rds(master_articles_df, "guardian_master_articles_2025.rds")
+write_rds(annual_corpus, "guardian_annual_corpus_2025.rds")
+```
+
+```{r}
+corpus_2025 <- read_rds("guardian_annual_corpus_2025.rds")
+corpus_2024 <- read_rds("guardian_annual_corpus_2024.rds")
+corpus_2023 <- read_rds("guardian_annual_corpus_2023.rds")
+corpus_2022 <- read_rds("guardian_annual_corpus_2022.rds")
+corpus_2021 <- read_rds("guardian_annual_corpus_2021.rds")
+corpus_2020 <- read_rds("guardian_annual_corpus_2020.rds")
+corpus_2019 <- read_rds("guardian_annual_corpus_2019.rds")
+corpus_2018 <- read_rds("guardian_annual_corpus_2018.rds")
+corpus_2017 <- read_rds("guardian_annual_corpus_2017.rds")
+corpus_2016 <- read_rds("guardian_annual_corpus_2016.rds")
+corpora_list <- list(
+  corpus_2016 = corpus_2016,
+  corpus_2017 = corpus_2017,
+  corpus_2018 = corpus_2018,
+  corpus_2019 = corpus_2019,
+  corpus_2020 = corpus_2020,
+  corpus_2021 = corpus_2021,
+  corpus_2022 = corpus_2022,
+  corpus_2023 = corpus_2023,
+  corpus_2024 = corpus_2024,
+  corpus_2025 = corpus_2025
+)
+
+combined_corpus <- map2_dfr(corpora_list, names(corpora_list), function(corpus_df, year_name) {
+  year <- as.integer(str_extract(year_name, "\\d+"))
+  corpus_df %>%
+    mutate(year = year) %>%
+    select(year, seed_word, full_text)
+})
+```
+
+```{r}
+clean_text <- function(text) {
+  text <- tolower(text)
+  text <- str_remove_all(text, "https?://[^\\s]+")
+  text <- str_remove_all(text, "[^a-zA-Z\\s]")
+  text <- str_squish(text)
+  return(text)
+}
+
+combined_corpus_clean <- combined_corpus %>%
+  mutate(
+    clean_text = map_chr(full_text, clean_text))
+```
+
+```{r}
+vector_size <- 50 
+window_size <- 8
+n_iter <- 30
+min_term_count <- 3
+
+seedword_results <- list()
+
+for (target_seedword in seed_words) {
+  
+  # Get all annual data for this specific seedword
+  seedword_data <- combined_corpus_clean %>%
+    filter(seed_word == target_seedword) %>%
+    arrange(year)
+  
+  # Train a separate model for each year for this seedword
+  yearly_models <- list()
+  
+  for (i in 1:nrow(seedword_data)) {
+    current_year <- seedword_data$year[i]
+    current_text <- seedword_data$clean_text[i]
+    
+    # Tokenize and train model
+    tokens <- word_tokenizer(current_text)
+    vocab <- create_vocabulary(itoken(tokens))
+    vocab <- prune_vocabulary(vocab, term_count_min = min_term_count)
+    
+    vectorizer <- vocab_vectorizer(vocab)
+    tcm <- create_tcm(itoken(tokens), vectorizer, skip_grams_window = window_size)
+    
+    glove <- GlobalVectors$new(rank = vector_size, x_max = 10)
+    wv_main <- glove$fit_transform(tcm, n_iter = n_iter, convergence_tol = 0.01)
+    wv_context <- glove$components
+    word_vectors <- wv_main + t(wv_context)
+    
+    yearly_models[[as.character(current_year)]] <- word_vectors
+    seedword_models[[target_seedword]] <- yearly_models
+  }
+}
+
+# Check which words we successfully processed
+successful_words <- names(seedword_models)
+print(paste("Successfully processed", length(successful_words), "words:"))
+print(successful_words)
+```
+
+```{r}
+# Now calculate semantic change for each seed word independently
+semantic_change_results <- data.frame()
+
+for (target_word in names(seedword_models)) {
+  
+  word_models <- seedword_models[[target_word]]
+  years <- sort(as.numeric(names(word_models)))
+  
+  # Use the earliest year as reference for alignment
+  reference_year <- as.character(years[1])
+  W_ref <- word_models[[reference_year]]
+  
+  # Check if our target word exists in the reference model
+  if (!target_word %in% rownames(W_ref)) {
+    message(paste("Warning: Target word not in reference model"))
+    next
+  }
+  
+  # Get the reference vector for this specific word
+  ref_vector <- W_ref[target_word, ]
+  
+  # Align all other years to the reference year
+  aligned_models <- list()
+  aligned_models[[reference_year]] <- W_ref
+  
+  for (year in names(word_models)) {
+    if (year == reference_year) next
+    
+    W_year <- word_models[[year]]
+    
+    # Find common words for alignment
+    common_words <- intersect(rownames(W_ref), rownames(W_year))
+    
+    if (length(common_words) >= 10) {
+      A <- W_ref[common_words, ]
+      B <- W_year[common_words, ]
+      
+      # Procrustes alignment
+      svd_result <- svd(crossprod(B, A))
+      R <- tcrossprod(svd_result$v, svd_result$u)
+      W_year_aligned <- word_models[[year]] %*% R
+      rownames(W_year_aligned) <- rownames(word_models[[year]])
+      aligned_models[[year]] <- W_year_aligned
+    } else {
+      # If not enough common words, use unaligned (with caution)
+      aligned_models[[year]] <- word_models[[year]]
+    }
+  }
+  
+  # Calculate cosine distance from reference for each year
+  for (year in names(aligned_models)) {
+    if (target_word %in% rownames(aligned_models[[year]])) {
+      year_vector <- aligned_models[[year]][target_word, ]
+      
+      cos_sim <- sum(ref_vector * year_vector) / 
+                 (sqrt(sum(ref_vector^2)) * sqrt(sum(year_vector^2)))
+      cos_distance <- 1 - cos_sim
+      
+      semantic_change_results <- rbind(semantic_change_results, data.frame(
+        seedword = target_word,
+        year = as.integer(year),
+        reference_year = as.integer(reference_year),
+        cosine_distance = cos_distance,
+        stringsAsFactors = FALSE
+      ))
+    }
+  }
+}
+
+semantic_change_results %>%
+  arrange(seedword, year) %>%
+  head(20)
+```
+
+```{r}
+ggplot(semantic_change_results, aes(x = year, y = cosine_distance, color = seedword)) +
+  geom_line(linewidth = 1, alpha = 0.7) +
+  geom_point(size = 2) +
+  facet_wrap(~ seedword, scales = "free_y") +
+  theme_minimal() +
+  labs(
+    title = "Individual Semantic Change Trajectories",
+    x = "Year",
+    y = "Semantic Change (Cosine Distance from First Year)"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none"
+  )
+```
