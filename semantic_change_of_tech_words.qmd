@@ -162,8 +162,6 @@ min_term_count <- 3
 seedword_results <- list()
 
 for (target_seedword in seed_words) {
-  
-  # Get all annual data for this specific seedword
   seedword_data <- combined_corpus_clean %>%
     filter(seed_word == target_seedword) %>%
     arrange(year)
